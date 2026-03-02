@@ -108,18 +108,20 @@
     }
 
     function postprocessONNX(output) {
-        // 输出是 5 个独立的 tensor，键为 '218', '219', '220', '221', '222'
         const outputKeys = Object.keys(output);
+        console.log('[jAccount] ========== ONNX 后处理开始 ==========');
         console.log('[jAccount] 输出键:', outputKeys);
         
         const chars = 'abcdefghijklmnopqrstuvwxyz';
         let result = '';
+        let confidenceValues = [];
         
+        // 收集所有位置的置信度
         for (const key of outputKeys) {
             const tensor = output[key];
             const data = tensor.data;
             
-            // 找到最大值的索引
+            // 找到最大值索引和置信度
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
                 if (data[j] > maxVal) {
@@ -127,10 +129,59 @@
                     maxIdx = j;
                 }
             }
+            confidenceValues.push(maxVal);
             result += chars[maxIdx];
+            console.log(`[jAccount] 位置 ${key}: ${chars[maxIdx]} (置信度: ${maxVal.toFixed(2)})`);
         }
         
-        // 4位验证码检测：后两位平均置信度 < 前三位平均的40%
+        console.log('[jAccount] 原始结果:', result);
+        console.log('[jAccount] 置信度数组:', confidenceValues.map(v => v.toFixed(2)));
+        
+        // 4位验证码检测
+        const lastTwo = confidenceValues.slice(-2);
+        const firstThree = confidenceValues.slice(0, 3);
+        const lastTwoAvg = lastTwo.reduce((a,b)=>a+b,0) / 2;
+        const firstThreeAvg = firstThree.reduce((a,b)=>a+b,0) / 3;
+        const ratio = lastTwoAvg / firstThreeAvg;
+        
+        console.log(`[jAccount] 前三位平均: ${firstThreeAvg.toFixed(2)}, 后两位平均: ${lastTwoAvg.toFixed(2)}, 比例: ${ratio.toFixed(3)}`);
+        
+        // 放宽条件：后两位平均 < 前三位的 50%（原来是 40%）
+        if (ratio < 0.5) {
+            result = result.substring(0, 4);
+            console.log('[jAccount] >>> 检测为4位验证码:', result);
+        } else {
+            console.log('[jAccount] >>> 检测为5位验证码:', result);
+        }
+        
+        console.log('[jAccount] ========== 后处理完成 ==========');
+        return result;
+    }
+
+    async function recognizeWithONNX(captchaImage) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         const confidenceValues = [];
         for (const key of outputKeys) {
             const tensor = output[key];
