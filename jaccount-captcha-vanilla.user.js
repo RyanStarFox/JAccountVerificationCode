@@ -54,55 +54,25 @@
     let ort = null;
     let onnxSession = null;
 
-    // 抑制 ONNX 警告日志 - 只抑制 ONNX Runtime 的内部日志
+    // 抑制 ONNX Runtime 警告
     (function() {
         const originalWarn = console.warn;
         const originalError = console.error;
         console.warn = function(...args) {
             const msg = args[0];
-            if (msg && typeof msg === 'string') {
-                // 抑制 ONNX Runtime 的警告: [W:onnxruntime 或 Initializer 开头
-                if (msg.includes('[W:onnxruntime') || msg.startsWith('Initializer ')) {
-                    return;
-                }
-            }
+            if (msg && typeof msg === 'string' && msg.includes('[W:onnxruntime')) return;
             originalWarn.apply(console, args);
         };
         console.error = function(...args) {
             const msg = args[0];
-            if (msg && typeof msg === 'string') {
-                if (msg.includes('[W:onnxruntime') || msg.startsWith('Initializer ')) {
-                    return;
-                }
-            }
+            if (msg && typeof msg === 'string' && (msg.includes('[W:onnxruntime') || msg.includes('Initializer '))) return;
             originalError.apply(console, args);
         };
-    });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            const msg = args[0];
+            if (msg && typeof msg === 'string' && msg.includes('[W:onnxruntime')) return;
+            originalError.apply(console, args);
+        };
+    })();
 
 
     async function loadONNX() {
@@ -142,106 +112,49 @@
         const threshold = 156;
         for (let i = 0; i < width * height; i++) {
             const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
-            // Python: img.point(table, "1") 后再做 /255.0 归一化
+            input[i] = gray > threshold ? 1.0 : 0.0;
+        }
+        return input;
+    }
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgElement, 0, 0, 64, 64);
+        const imageData = ctx.getImageData(0, 0, 64, 64);
+        const data = imageData.data;
+        const input = new Float32Array(64 * 64);
+        const threshold = 156;
+        for (let i = 0; i < 64 * 64; i++) {
+            const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
             input[i] = gray > threshold ? 1.0 : 0.0;
         }
         return input;
     }
 
     function postprocessONNX(output) {
-        // 输出是 5 个独立的 tensor，键为 '218', '219', '220', '221', '222'
-        const outputKeys = Object.keys(output);
-        console.log('[jAccount] 输出键:', outputKeys);
-        
         const chars = 'abcdefghijklmnopqrstuvwxyz';
+        const logits = output.output.data;
         let result = '';
-        let confidenceValues = [];
-        
-        for (const key of outputKeys) {
-            const tensor = output[key];
-            const data = tensor.data;
-            
-            // 找到最大值的索引和置信度
+        for (let i = 0; i < 5; i++) {
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
-                if (data[j] > maxVal) {
-                    maxVal = data[j];
+                if (logits[i * 26 + j] > maxVal) {
+                    maxVal = logits[i * 26 + j];
                     maxIdx = j;
                 }
             }
-            confidenceValues.push(maxVal);
             result += chars[maxIdx];
         }
-        
-        console.log('[jAccount] 置信度:', confidenceValues);
-        
-        // 检测有效字符数量 - 从后往前扫描，找到低置信度的起始位置
-        // 支持 1-5 位验证码（模型输出 5 个 tensor）
-        const avgConfidence = confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length;
-        // 专门检测4位验证码：最后一两个位置信度明显低于前面
-        // 4位验证码：第4位(索引3)和第5位(索引4)的置信度应该都很低
-        const lastTwo = confidenceValues.slice(-2);
-        const firstThree = confidenceValues.slice(0, 3);
-        const lastTwoAvg = lastTwo.reduce((a,b)=>a+b,0) / 2;
-        const firstThreeAvg = firstThree.reduce((a,b)=>a+b,0) / 3;
-        
-        // 如果后两位平均置信度小于前三位平均的40%，认为是4位
-        if (lastTwoAvg < firstThreeAvg * 0.4 && confidenceValues.length === 5) {
-            result = result.substring(0, 4);
-            console.log('[jAccount] 检测为4位验证码:', result);
-        }
-        
-        // 从后往前数有多少个低置信度的位置
-        let trailingLowCount = 0;
-        for (let i = confidenceValues.length - 1; i >= 0; i--) {
-            if (confidenceValues[i] < threshold) {
-                trailingLowCount++;
-            } else {
-                break;  // 遇到高置信度就停止
-            }
-        }
-        
-        // 实际长度 = 总长度 - 尾随低置信度数量
-        // 至少保留 1 位
-        const actualLength = Math.max(1, confidenceValues.length - trailingLowCount);
-        
-        if (trailingLowCount > 0) {
-            result = result.substring(0, actualLength);
-            console.log(`[jAccount] 检测为${actualLength}位验证码 (${trailingLowCount}位低置信度):`, result);
-        }
-        
-        console.log('[jAccount] 后处理结果:', result);
         return result;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     async function recognizeWithONNX(captchaImage) {
         await loadONNX();
         await loadONNXModel();
-        
-        // 预处理图片
         const inputData = preprocessForONNX(captchaImage);
-        console.log('[jAccount] 输入数据长度:', inputData.length);
-        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 40, 110]);
-        
-        // 模型输入名是 'input.1'
-        console.log('[jAccount] 执行 ONNX 推理...');
-        const feeds = { 'input.1': inputTensor };
-        const output = await onnxSession.run(feeds);
-        console.log('[jAccount] ONNX 输出 keys:', Object.keys(output));
-        
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
+        const output = await onnxSession.run({ input: inputTensor });
         return postprocessONNX(output);
     }
     
