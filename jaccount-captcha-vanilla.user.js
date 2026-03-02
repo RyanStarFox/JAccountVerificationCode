@@ -151,39 +151,56 @@
         }
     }
 
-    // 预处理图片
-    function preprocessImage(imgData, width = 64, height = 64) {
+    // 预处理图片 - 匹配 Python 代码
+    function preprocessImage(imgElement, width = 64, height = 64) {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(imgData, 0, 0, width, height);
+        
+        // 绘制图片
+        ctx.drawImage(imgElement, 0, 0, width, height);
+        
+        // 获取图像数据
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
+        
+        // 转换为灰度并应用阈值 (table = [0]*156 + [1]*100)
+        const threshold = 156;
         const input = new Float32Array(width * height);
+        
         for (let i = 0; i < width * height; i++) {
             const r = data[i * 4];
             const g = data[i * 4 + 1];
             const b = data[i * 4 + 2];
+            // 灰度转换
             const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-            input[i] = gray / 255.0;
+            // 阈值处理
+            input[i] = gray > threshold ? 1.0 : 0.0;
         }
+        
         return input;
     }
 
-    // 后处理
+    // 后处理 - 只支持26个字母 (a-z)
     function postprocess(output) {
-        const logits = output.data;
-        const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+        const chars = 'abcdefghijklmnopqrstuvwxyz';
         let result = '';
         const captchaLength = 5;
         const numClasses = chars.length;
+        
+        // 输出形状应该是 [1, 5, 26]
+        const logits = output.output.data;
+        
         for (let i = 0; i < captchaLength; i++) {
             let maxIdx = 0;
             let maxVal = -Infinity;
+            
             for (let j = 0; j < numClasses; j++) {
-                if (logits[i * numClasses + j] > maxVal) {
-                    maxVal = logits[i * numClasses + j];
+                // 每个字符的logits是分开的
+                const idx = i * numClasses + j;
+                if (logits[idx] > maxVal) {
+                    maxVal = logits[idx];
                     maxIdx = j;
                 }
             }
@@ -195,15 +212,29 @@
     // 本地 ONNX 模型识别
     async function recognizeWithONNX(captchaImage) {
         console.log('[jAccount] 开始 ONNX 模型识别...');
-        await loadONNXRuntime();
-        await loadModel();
-        const inputData = preprocessImage(captchaImage);
-        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
-        console.log('[jAccount] 执行推理...');
-        const output = await session.run({ input: inputTensor });
-        const result = postprocess(output.output);
-        console.log('[jAccount] 识别结果:', result);
-        return result;
+        
+        try {
+            await loadONNXRuntime();
+            await loadModel();
+            
+            const inputData = preprocessImage(captchaImage);
+            console.log('[jAccount] 输入数据形状:', inputData.length);
+            
+            // 创建输入 tensor - 形状 [1, 1, 64, 64]
+            const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
+            
+            console.log('[jAccount] 执行推理...');
+            const output = await session.run({ input: inputTensor });
+            
+            console.log('[jAccount] 输出:', output);
+            const result = postprocess(output);
+            console.log('[jAccount] 识别结果:', result);
+            
+            return result;
+        } catch (e) {
+            console.error('[jAccount] ONNX 识别失败:', e);
+            throw e;
+        }
     }
 
     // 远程识别 (GM_xmlHttpRequest)
@@ -247,8 +278,15 @@
         try {
             captchaInput.placeholder = '正在识别...';
             
-            // 使用本地 ONNX 模型识别
-            const result = await recognizeWithONNX(captchaImage);
+            let result;
+            try {
+                // 优先使用 ONNX 模型识别
+                result = await recognizeWithONNX(captchaImage);
+            } catch (onnxError) {
+                console.warn('[jAccount] ONNX 识别失败，使用 Tesseract 备用:', onnxError);
+                // 备用: 使用 Tesseract
+                result = await recognizeWithTesseract(captchaImage);
+            }
             
             // 填充结果
             captchaInput.value = result;
@@ -259,7 +297,7 @@
         } catch (e) {
             console.error('[jAccount] 识别失败:', e);
             captchaInput.placeholder = '识别失败，请手动输入';
-    }
+        }
     
     function doRecognize() {
         const captchaImage = getElement(CONFIG.captchaImageSelector);
