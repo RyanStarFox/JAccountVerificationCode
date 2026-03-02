@@ -56,7 +56,24 @@
 
 
     // 抑制 ONNX 警告日志
+    // 抑制 ONNX 警告日志
     (function() {
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        const originalLog = console.log;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnxruntime')) return;
+            originalWarn.apply(console, args);
+        };
+        console.error = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnxruntime')) return;
+            originalError.apply(console, args);
+        };
+        console.log = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnxruntime')) return;
+            originalLog.apply(console, args);
+        };
+    })();
         const originalWarn = console.warn;
         console.warn = function(...args) {
             if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnx')) return;
@@ -136,7 +153,18 @@
         // 检测有效字符数量 - 从后往前扫描，找到低置信度的起始位置
         // 支持 1-5 位验证码（模型输出 5 个 tensor）
         const avgConfidence = confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length;
-        const threshold = avgConfidence * 0.3;
+        // 专门检测4位验证码：最后一两个位置信度明显低于前面
+        // 4位验证码：第4位(索引3)和第5位(索引4)的置信度应该都很低
+        const lastTwo = confidenceValues.slice(-2);
+        const firstThree = confidenceValues.slice(0, 3);
+        const lastTwoAvg = lastTwo.reduce((a,b)=>a+b,0) / 2;
+        const firstThreeAvg = firstThree.reduce((a,b)=>a+b,0) / 3;
+        
+        // 如果后两位平均置信度小于前三位平均的40%，认为是4位
+        if (lastTwoAvg < firstThreeAvg * 0.4 && confidenceValues.length === 5) {
+            result = result.substring(0, 4);
+            console.log('[jAccount] 检测为4位验证码:', result);
+        }
         
         // 从后往前数有多少个低置信度的位置
         let trailingLowCount = 0;
