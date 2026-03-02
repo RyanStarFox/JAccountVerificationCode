@@ -116,12 +116,61 @@
         let result = '';
         let confidenceValues = [];
         
-        // 收集所有位置的置信度
+        for (const key of outputKeys) {
+            const tensor = output[key];
+            const data = tensor.data;
+            let maxIdx = 0, maxVal = -Infinity;
+            for (let j = 0; j < 26; j++) {
+                if (data[j] > maxVal) { maxVal = data[j]; maxIdx = j; }
+            }
+            confidenceValues.push(maxVal);
+            result += chars[maxIdx];
+            console.log(`[jAccount] 位置 ${key}: ${chars[maxIdx]} (${maxVal.toFixed(2)})`);
+        }
+        
+        console.log('[jAccount] 原始:', result, '| 置信度:', confidenceValues.map(v=>v.toFixed(2)));
+        
+        // 4位检测: 第5位 vs 前4位平均
+        const lastOne = confidenceValues[4];
+        const firstFourAvg = confidenceValues.slice(0,4).reduce((a,b)=>a+b,0)/4;
+        const ratio = lastOne / firstFourAvg;
+        console.log(`[jAccount] 前4均:${firstFourAvg.toFixed(0)} 第5位:${lastOne.toFixed(0)} 比例:${ratio.toFixed(2)}`);
+        
+        if (ratio < 0.5) { result = result.substring(0,4); console.log('[jAccount] >>> 4位:',result); }
+        else { console.log('[jAccount] >>> 5位:',result); }
+        
+        return result;
+    }
+
+    async function recognizeWithONNX(captchaImage) {
+        console.log('[jAccount] ========== ONNX 识别开始 ==========');
+        await loadONNX();
+        await loadONNXModel();
+        
+        const inputData = preprocessForONNX(captchaImage);
+        console.log('[jAccount] 输入数据长度:', inputData.length);
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 40, 110]);
+        
+        console.log('[jAccount] 执行 ONNX 推理...');
+        const output = await onnxSession.run({ 'input.1': inputTensor });
+        console.log('[jAccount] ONNX 输出 keys:', Object.keys(output));
+        
+        return postprocessONNX(output);
+    }
+
+    // ========== Tesseract 识别 (回退方案) ==========
+        // 输出是 5 个独立的 tensor，键为 '218', '219', '220', '221', '222'
+        const outputKeys = Object.keys(output);
+        console.log('[jAccount] 输出键:', outputKeys);
+        
+        const chars = 'abcdefghijklmnopqrstuvwxyz';
+        let result = '';
+        
         for (const key of outputKeys) {
             const tensor = output[key];
             const data = tensor.data;
             
-            // 找到最大值索引和置信度
+            // 找到最大值的索引
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
                 if (data[j] > maxVal) {
@@ -129,102 +178,15 @@
                     maxIdx = j;
                 }
             }
-            confidenceValues.push(maxVal);
             result += chars[maxIdx];
-            console.log(`[jAccount] 位置 ${key}: ${chars[maxIdx]} (置信度: ${maxVal.toFixed(2)})`);
-        }
-        
-        console.log('[jAccount] 原始结果:', result);
-        console.log('[jAccount] 置信度数组:', confidenceValues.map(v => v.toFixed(2)));
-        
-        // 4位验证码检测
-        const lastTwo = confidenceValues.slice(-2);
-        const firstThree = confidenceValues.slice(0, 3);
-        const lastTwoAvg = lastTwo.reduce((a,b)=>a+b,0) / 2;
-        const firstThreeAvg = firstThree.reduce((a,b)=>a+b,0) / 3;
-        const ratio = lastTwoAvg / firstThreeAvg;
-        
-        console.log(`[jAccount] 前三位平均: ${firstThreeAvg.toFixed(2)}, 后两位平均: ${lastTwoAvg.toFixed(2)}, 比例: ${ratio.toFixed(3)}`);
-        
-        // 放宽条件：后两位平均 < 前三位的 50%（原来是 40%）
-        if (ratio < 0.5) {
-            result = result.substring(0, 4);
-            console.log('[jAccount] >>> 检测为4位验证码:', result);
-        } else {
-            console.log('[jAccount] >>> 检测为5位验证码:', result);
-        }
-        
-        console.log('[jAccount] ========== 后处理完成 ==========');
-        return result;
-    }
-
-    async function recognizeWithONNX(captchaImage) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        const confidenceValues = [];
-        for (const key of outputKeys) {
-            const tensor = output[key];
-            const data = tensor.data;
-            let maxVal = -Infinity;
-            for (let j = 0; j < 26; j++) {
-                if (data[j] > maxVal) maxVal = data[j];
-            }
-            confidenceValues.push(maxVal);
-        }
-        const lastTwo = confidenceValues.slice(-2);
-        const firstThree = confidenceValues.slice(0, 3);
-        const lastTwoAvg = lastTwo.reduce((a,b)=>a+b,0) / 2;
-        const firstThreeAvg = firstThree.reduce((a,b)=>a+b,0) / 3;
-        if (lastTwoAvg < firstThreeAvg * 0.4) {
-            result = result.substring(0, 4);
-            console.log('[jAccount] 检测为4位验证码:', result);
-            console.log('[jAccount] 检测为4位验证码:', result);
         }
         
         console.log('[jAccount] 后处理结果:', result);
         return result;
     }
 
-    async function recognizeWithONNX(captchaImage) {
-        await loadONNX();
-        await loadONNXModel();
-        
-        // 预处理图片
-        const inputData = preprocessForONNX(captchaImage);
-        console.log('[jAccount] 输入数据长度:', inputData.length);
-        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 40, 110]);
-        
-        // 模型输入名是 'input.1'
-        console.log('[jAccount] 执行 ONNX 推理...');
-        const feeds = { 'input.1': inputTensor };
-        const output = await onnxSession.run(feeds);
-        console.log('[jAccount] ONNX 输出 keys:', Object.keys(output));
-        
-        return postprocessONNX(output);
-    }
-    
     // ========== Tesseract 识别 (回退方案) ==========
+
     async function loadTesseract() {
         if (window.Tesseract) return;
         console.log('[jAccount] 加载 Tesseract.js...');
