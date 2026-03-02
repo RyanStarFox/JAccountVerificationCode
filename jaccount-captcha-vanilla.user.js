@@ -2,7 +2,8 @@
 // @name         jAccount 验证码识别 - 原生JS版 (无需jQuery)
 // @name:en      jAccount Captcha Auto-Recognizer - Vanilla JS
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
+// @description  jAccount验证码识别 - 本地ONNX模型识别，精度高速度快
 // @description  jAccount验证码识别 - 纯本地OCR，无需远程服务器
 // @description:en jAccount captcha recognition - local OCR, no remote server required
 // @author       danyang685
@@ -14,7 +15,7 @@
 // @grant        GM_xmlHttpRequest
 // @run-at       document-end
 // @connect      unpkg.com
-// @license      MIT
+// @connect      raw.githubusercontent.com
 // @license      MIT
 // ==/UserScript==
 
@@ -115,34 +116,94 @@
             }
         });
     }
-    // 本地 OCR 识别 (使用 Tesseract.js)
-    async function recognizeWithTesseract(captchaImage) {
-        console.log('[jAccount] 开始本地 OCR 识别...');
-        
-        // 获取图片 Base64
-        const dataURL = await getImageBase64(captchaImage);
-        
-        // 动态加载 Tesseract.js
-        if (!window.Tesseract) {
-            console.log('[jAccount] 加载 Tesseract.js...');
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';
-                script.onload = resolve;
-                script.onerror = () => reject(new Error('Tesseract.js 加载失败'));
-                document.head.appendChild(script);
-            });
-        }
-        
-        console.log('[jAccount] 执行 OCR 识别...');
-        const result = await Tesseract.recognize(dataURL, 'eng+chi_sim', {
-            logger: m => console.log('[jAccount] OCR:', m.status, (m.progress * 100).toFixed(0) + '%')
+    // ONNX Runtime Web
+    let ort = null;
+    let session = null;
+
+    // 加载 ONNX Runtime Web
+    async function loadONNXRuntime() {
+        if (ort) return ort;
+        console.log('[jAccount] 加载 ONNX Runtime Web...');
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/onnxruntime-web@1.16.3/dist/ort.min.js';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('ONNX Runtime 加载失败'));
+            document.head.appendChild(script);
         });
-        
-        // 清理结果：只保留数字和字母
-        const text = result.data.text.replace(/[^a-zA-Z0-9]/g, '');
-        console.log('[jAccount] OCR 原始结果:', result.data.text, '-> 清理后:', text);
-        return text;
+        ort = window.ort;
+        console.log('[jAccount] ONNX Runtime 已加载');
+        return ort;
+    }
+
+    // 加载模型
+    async function loadModel() {
+        if (session) return session;
+        console.log('[jAccount] 加载识别模型...');
+        const modelUrl = 'https://raw.githubusercontent.com/RyanStarFox/JAccountVerificationCode/main/model/nn_model.onnx';
+        try {
+            session = await ort.InferenceSession.create(modelUrl);
+            console.log('[jAccount] 模型加载成功');
+            return session;
+        } catch (e) {
+            console.error('[jAccount] 模型加载失败:', e);
+            throw e;
+        }
+    }
+
+    // 预处理图片
+    function preprocessImage(imgData, width = 64, height = 64) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgData, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        const input = new Float32Array(width * height);
+        for (let i = 0; i < width * height; i++) {
+            const r = data[i * 4];
+            const g = data[i * 4 + 1];
+            const b = data[i * 4 + 2];
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            input[i] = gray / 255.0;
+        }
+        return input;
+    }
+
+    // 后处理
+    function postprocess(output) {
+        const logits = output.data;
+        const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+        let result = '';
+        const captchaLength = 5;
+        const numClasses = chars.length;
+        for (let i = 0; i < captchaLength; i++) {
+            let maxIdx = 0;
+            let maxVal = -Infinity;
+            for (let j = 0; j < numClasses; j++) {
+                if (logits[i * numClasses + j] > maxVal) {
+                    maxVal = logits[i * numClasses + j];
+                    maxIdx = j;
+                }
+            }
+            result += chars[maxIdx];
+        }
+        return result;
+    }
+
+    // 本地 ONNX 模型识别
+    async function recognizeWithONNX(captchaImage) {
+        console.log('[jAccount] 开始 ONNX 模型识别...');
+        await loadONNXRuntime();
+        await loadModel();
+        const inputData = preprocessImage(captchaImage);
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
+        console.log('[jAccount] 执行推理...');
+        const output = await session.run({ input: inputTensor });
+        const result = postprocess(output.output);
+        console.log('[jAccount] 识别结果:', result);
+        return result;
     }
 
     // 远程识别 (GM_xmlHttpRequest)
@@ -184,10 +245,10 @@
         }
         
         try {
-            captchaInput.placeholder = '正在OCR识别...';
+            captchaInput.placeholder = '正在识别...';
             
-            // 使用本地 Tesseract.js 进行 OCR 识别
-            const result = await recognizeWithTesseract(captchaImage);
+            // 使用本地 ONNX 模型识别
+            const result = await recognizeWithONNX(captchaImage);
             
             // 填充结果
             captchaInput.value = result;
@@ -198,7 +259,6 @@
         } catch (e) {
             console.error('[jAccount] 识别失败:', e);
             captchaInput.placeholder = '识别失败，请手动输入';
-        }
     }
     
     function doRecognize() {
