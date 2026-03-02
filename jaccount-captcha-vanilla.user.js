@@ -2,10 +2,9 @@
 // @name         jAccount 验证码识别 - 原生JS版 (无需jQuery)
 // @name:en      jAccount Captcha Auto-Recognizer - Vanilla JS
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.3
 // @description  jAccount验证码识别 - 本地ONNX模型识别，精度高速度快
-// @description  jAccount验证码识别 - 纯本地OCR，无需远程服务器
-// @description:en jAccount captcha recognition - local OCR, no remote server required
+// @description:en jAccount captcha recognition - local ONNX model, fast & accurate
 // @author       danyang685
 // @homepageURL  https://github.com/danyang685/JAccountVerificationCode
 // @supportURL   https://github.com/danyang685/JAccountVerificationCode/issues
