@@ -110,35 +110,67 @@
     function postprocessONNX(output) {
         const outputKeys = Object.keys(output);
         console.log('[jAccount] ========== ONNX 后处理开始 ==========');
-        console.log('[jAccount] 输出键:', outputKeys);
         
         const chars = 'abcdefghijklmnopqrstuvwxyz';
         let result = '';
         let confidenceValues = [];
+        let secondBestValues = []; // 用于 Margin 法
         
         for (const key of outputKeys) {
             const tensor = output[key];
             const data = tensor.data;
+            
+            // 找到第一名和第二名
             let maxIdx = 0, maxVal = -Infinity;
+            let secondMaxVal = -Infinity;
+            
             for (let j = 0; j < 26; j++) {
-                if (data[j] > maxVal) { maxVal = data[j]; maxIdx = j; }
+                if (data[j] > maxVal) {
+                    secondMaxVal = maxVal;
+                    maxVal = data[j];
+                    maxIdx = j;
+                } else if (data[j] > secondMaxVal) {
+                    secondMaxVal = data[j];
+                }
             }
             confidenceValues.push(maxVal);
+            secondBestValues.push(secondMaxVal);
             result += chars[maxIdx];
-            console.log(`[jAccount] 位置 ${key}: ${chars[maxIdx]} (${maxVal.toFixed(2)})`);
+            console.log(`[jAccount] 位置 ${key}: ${chars[maxIdx]} (置信度: ${maxVal.toFixed(0)})`);
         }
         
-        console.log('[jAccount] 原始:', result, '| 置信度:', confidenceValues.map(v=>v.toFixed(2)));
+        console.log('[jAccount] 原始结果:', result);
         
-        // 4位检测: 第5位 vs 前4位平均
+        // ==========================================
+        // 收集三种判断方法的数据，输出到控制台供分析
+        // ==========================================
+        
+        // 1. 绝对值法
         const lastOne = confidenceValues[4];
-        const firstFourAvg = confidenceValues.slice(0,4).reduce((a,b)=>a+b,0)/4;
+        console.log(`[jAccount] [指标1 - 绝对值] 第5位置信度: ${lastOne.toFixed(0)}`);
+        
+        // 2. 比例法 (之前的方法)
+        const firstFourAvg = confidenceValues.slice(0, 4).reduce((a,b)=>a+b,0) / 4;
         const ratio = lastOne / firstFourAvg;
-        console.log(`[jAccount] 前4均:${firstFourAvg.toFixed(0)} 第5位:${lastOne.toFixed(0)} 比例:${ratio.toFixed(2)}`);
+        console.log(`[jAccount] [指标2 - 比例] 前4均值: ${firstFourAvg.toFixed(0)}, 第5位: ${lastOne.toFixed(0)}, 比例: ${ratio.toFixed(3)}`);
         
-        if (ratio < 0.5) { result = result.substring(0,4); console.log('[jAccount] >>> 4位:',result); }
-        else { console.log('[jAccount] >>> 5位:',result); }
+        // 3. 断层法
+        const dropRatio = confidenceValues[4] / confidenceValues[3];
+        console.log(`[jAccount] [指标3 - 断层] 第4位: ${confidenceValues[3].toFixed(0)}, 第5位: ${lastOne.toFixed(0)}, 断层比例(第5位/第4位): ${dropRatio.toFixed(3)}`);
         
+        // 4. Margin法 (冠亚军差距)
+        const margin = confidenceValues[4] / (secondBestValues[4] === 0 ? 0.01 : secondBestValues[4]);
+        console.log(`[jAccount] [指标4 - Margin] 第5位第一名: ${confidenceValues[4].toFixed(0)}, 第二名: ${secondBestValues[4].toFixed(0)}, 倍数: ${margin.toFixed(2)}`);
+        
+        // 综合判断 (当前仍然使用比例法，供对比)
+        if (ratio < 0.5 || lastOne < 10000) { 
+            result = result.substring(0, 4); 
+            console.log('[jAccount] >>> 最终判定为 4 位:', result); 
+        } else { 
+            console.log('[jAccount] >>> 最终判定为 5 位:', result); 
+        }
+        
+        console.log('[jAccount] ========== 后处理完成 ==========');
         return result;
     }
 
@@ -159,34 +191,6 @@
     }
 
     // ========== Tesseract 识别 (回退方案) ==========
-        // 输出是 5 个独立的 tensor，键为 '218', '219', '220', '221', '222'
-        const outputKeys = Object.keys(output);
-        console.log('[jAccount] 输出键:', outputKeys);
-        
-        const chars = 'abcdefghijklmnopqrstuvwxyz';
-        let result = '';
-        
-        for (const key of outputKeys) {
-            const tensor = output[key];
-            const data = tensor.data;
-            
-            // 找到最大值的索引
-            let maxIdx = 0, maxVal = -Infinity;
-            for (let j = 0; j < 26; j++) {
-                if (data[j] > maxVal) {
-                    maxVal = data[j];
-                    maxIdx = j;
-                }
-            }
-            result += chars[maxIdx];
-        }
-        
-        console.log('[jAccount] 后处理结果:', result);
-        return result;
-    }
-
-    // ========== Tesseract 识别 (回退方案) ==========
-
     async function loadTesseract() {
         if (window.Tesseract) return;
         console.log('[jAccount] 加载 Tesseract.js...');
