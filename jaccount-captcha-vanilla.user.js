@@ -22,6 +22,7 @@
     const CONFIG = {
         captchaInputSelector: '#input-login-captcha',
         captchaImageSelector: '#captcha-img',
+        usernameSelector: '#input-login-name',
         timeout: 30000
     };
     
@@ -85,6 +86,12 @@
             captchaInput.value = text;
             captchaInput.spellcheck = false;
             console.log('[jAccount] 识别成功:', text);
+            
+            // 自动聚焦到用户名输入框
+            const usernameInput = getElement(CONFIG.usernameSelector);
+            if (usernameInput) {
+                usernameInput.focus();
+            }
             
         } catch (e) {
             console.error('[jAccount] 识别失败:', e);
