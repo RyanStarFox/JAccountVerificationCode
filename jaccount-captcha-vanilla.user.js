@@ -56,24 +56,13 @@
 
     // 抑制 ONNX Runtime 警告
     (function() {
-        const originalWarn = console.warn;
         const originalError = console.error;
-        console.warn = function(...args) {
-            const msg = args[0];
-            if (msg && typeof msg === 'string' && msg.includes('[W:onnxruntime')) return;
-            originalWarn.apply(console, args);
-        };
         console.error = function(...args) {
             const msg = args[0];
-            if (msg && typeof msg === 'string' && (msg.includes('[W:onnxruntime') || msg.includes('Initializer '))) return;
+            if (msg && typeof msg === 'string' && (msg.includes('[W:onnxruntime') || msg.startsWith('Initializer '))) return;
             originalError.apply(console, args);
         };
     })();
-
-
-
-
-
 
 
     async function loadONNX() {
@@ -117,45 +106,70 @@
         }
         return input;
     }
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(imgElement, 0, 0, 64, 64);
-        const imageData = ctx.getImageData(0, 0, 64, 64);
-        const data = imageData.data;
-        const input = new Float32Array(64 * 64);
-        const threshold = 156;
-        for (let i = 0; i < 64 * 64; i++) {
-            const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
-            input[i] = gray > threshold ? 1.0 : 0.0;
-        }
-        return input;
-    }
 
     function postprocessONNX(output) {
+        // 输出是 5 个独立的 tensor，键为 '218', '219', '220', '221', '222'
+        const outputKeys = Object.keys(output);
+        console.log('[jAccount] 输出键:', outputKeys);
+        
         const chars = 'abcdefghijklmnopqrstuvwxyz';
-        const logits = output.output.data;
         let result = '';
-        for (let i = 0; i < 5; i++) {
+        
+        for (const key of outputKeys) {
+            const tensor = output[key];
+            const data = tensor.data;
+            
+            // 找到最大值的索引
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
-                if (logits[i * 26 + j] > maxVal) {
-                    maxVal = logits[i * 26 + j];
+                if (data[j] > maxVal) {
+                    maxVal = data[j];
                     maxIdx = j;
                 }
             }
             result += chars[maxIdx];
         }
+        
+        // 4位验证码检测：后两位平均置信度 < 前三位平均的40%
+        const confidenceValues = [];
+        for (const key of outputKeys) {
+            const tensor = output[key];
+            const data = tensor.data;
+            let maxVal = -Infinity;
+            for (let j = 0; j < 26; j++) {
+                if (data[j] > maxVal) maxVal = data[j];
+            }
+            confidenceValues.push(maxVal);
+        }
+        const lastTwo = confidenceValues.slice(-2);
+        const firstThree = confidenceValues.slice(0, 3);
+        const lastTwoAvg = lastTwo.reduce((a,b)=>a+b,0) / 2;
+        const firstThreeAvg = firstThree.reduce((a,b)=>a+b,0) / 3;
+        if (lastTwoAvg < firstThreeAvg * 0.4) {
+            result = result.substring(0, 4);
+            console.log('[jAccount] 检测为4位验证码:', result);
+            console.log('[jAccount] 检测为4位验证码:', result);
+        }
+        
+        console.log('[jAccount] 后处理结果:', result);
         return result;
     }
 
     async function recognizeWithONNX(captchaImage) {
         await loadONNX();
         await loadONNXModel();
+        
+        // 预处理图片
         const inputData = preprocessForONNX(captchaImage);
-        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
-        const output = await onnxSession.run({ input: inputTensor });
+        console.log('[jAccount] 输入数据长度:', inputData.length);
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 40, 110]);
+        
+        // 模型输入名是 'input.1'
+        console.log('[jAccount] 执行 ONNX 推理...');
+        const feeds = { 'input.1': inputTensor };
+        const output = await onnxSession.run(feeds);
+        console.log('[jAccount] ONNX 输出 keys:', Object.keys(output));
+        
         return postprocessONNX(output);
     }
     
