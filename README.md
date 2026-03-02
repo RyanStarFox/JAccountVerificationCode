@@ -1,8 +1,6 @@
 # jAccount 验证码自动识别 | jAccount Captcha Auto-Recognizer
 
-> 基于 [jAccount 验证码在线](https://greasyfork.org/zh-CN/scripts/432645-jaccount-验证码在线-resnet-高速高精度毫秒级识别) 修改而来
-
-[English](#english) | [中文](#中文)
+> 基于 [jAccount 验证码在线](https://greasyfork.org/zh-CN/scripts/432645-jaccount-验证码在线-resnet-高速高精度毫秒级识别) 修改而来，修正了其与Safari的兼容性
 
 ---
 
