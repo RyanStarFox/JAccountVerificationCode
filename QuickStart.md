@@ -8,6 +8,7 @@
 
 - [Tampermonkey for Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 - [Tampermonkey for Firefox](https://addons.mozilla.org/firefox/addon/tampermonkey/)
+- [Userscripts for Safari](https://apps.apple.com/us/app/userscripts/id1463298887) (推荐 Safari 用户使用 | Recommended for Safari users)
 - [Tampermonkey for Safari](https://safari.tampermonkey.net/)
 
 ### 第二步：安装脚本
@@ -40,6 +41,7 @@ Install the Tampermonkey extension in your browser:
 
 - [Tampermonkey for Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 - [Tampermonkey for Firefox](https://addons.mozilla.org/firefox/addon/tampermonkey/)
+- [Userscripts for Safari](https://apps.apple.com/us/app/userscripts/id1463298887) (推荐 Safari 用户使用 | Recommended for Safari users)
 - [Tampermonkey for Safari](https://safari.tampermonkey.net/)
 
 ### Step 2: Install the Script

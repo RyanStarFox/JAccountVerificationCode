@@ -87,6 +87,9 @@ MIT License
 
 ---
 
-## 贡献者 | Contributors
+## 致谢与参考 | Acknowledgments & References
+
+- 本项目的开发参考了 [danyang685](https://github.com/danyang685) 的代码实现，特此致谢。
+- The development of this project referenced the code implementation by [danyang685](https://github.com/danyang685). Special thanks.
 
 - [danyang685](https://github.com/danyang685)
