@@ -214,18 +214,18 @@
         return result;
     }
 
-    async function recognizeWithONNX(captchaImage) {
-        const avgConfidence = confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length;
-        const lastConfidence = confidenceValues[confidenceValues.length - 1];
-        
-        if (lastConfidence < avgConfidence * 0.3 && confidenceValues.length === 5) {
-            result = result.substring(0, 4);
-            console.log('[jAccount] 检测为4位验证码:', result);
-        }
-        
-        console.log('[jAccount] 后处理结果:', result);
-        return result;
-    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     async function recognizeWithONNX(captchaImage) {
         await loadONNX();
