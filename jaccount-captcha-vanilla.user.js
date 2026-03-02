@@ -77,11 +77,11 @@
             }
             originalError.apply(console, args);
         };
-    })();
+    });
 
 
-    // 抑制 ONNX 警告日志
-    // 抑制 ONNX 警告日志
+
+
     (function() {
         const originalWarn = console.warn;
         const originalError = console.error;
