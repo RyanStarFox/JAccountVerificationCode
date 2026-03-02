@@ -114,9 +114,17 @@
     async function recognizeWithONNX(captchaImage) {
         await loadONNX();
         await loadONNXModel();
-        const inputData = preprocessForONNX(captchaImage);
+        console.log('[jAccount] 输入数据长度:', inputData.length);
         const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
-        const output = await onnxSession.run({ input: inputTensor });
+        // 模型输入名是 'input.1'
+        console.log('[jAccount] 执行 ONNX 推理...');
+        const feeds = { 'input.1': inputTensor };
+        const output = await onnxSession.run(feeds);
+        console.log('[jAccount] ONNX 输出 keys:', Object.keys(output));
+        return postprocessONNX(output);
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
+        // 模型输入名是 'input.1'
+        const output = await onnxSession.run({ 'input.1': inputTensor });
         return postprocessONNX(output);
     }
     
