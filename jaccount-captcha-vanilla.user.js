@@ -68,11 +68,12 @@
             if (msg && typeof msg === 'string' && (msg.includes('[W:onnxruntime') || msg.includes('Initializer '))) return;
             originalError.apply(console, args);
         };
-            const msg = args[0];
-            if (msg && typeof msg === 'string' && msg.includes('[W:onnxruntime')) return;
-            originalError.apply(console, args);
-        };
     })();
+
+
+
+
+
 
 
     async function loadONNX() {
