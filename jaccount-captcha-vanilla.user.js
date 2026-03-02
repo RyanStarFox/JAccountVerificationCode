@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         jAccount 验证码识别 - 本地OCR版
-// @name:en      jAccount Captcha Auto-Recognizer
-// @namespace    http://tampermonkey.net/
-// @version      3.0
-// @description  jAccount验证码识别 - 本地Tesseract.js OCR
-// @description:en jAccount captcha recognition - local OCR with Tesseract.js
+// @name         jAccount 验证码识别 - 本地深度学习版
+// @name:en      jAccount Captcha Auto-Recognizer (Local Deep Learning)
+// @namespace    https://github.com/RyanStarFox
+// @version      3.0.1
+// @description  基于本地 ONNX 模型的 jAccount 验证码自动识别，速度快，无服务器请求，支持 4/5 位验证码
+// @description:en Auto-recognize jAccount captcha using local ONNX model, fast and secure, supports 4/5 digits
 // @author       danyang685
 // @homepageURL  https://github.com/RyanStarFox/JAccountVerificationCode
 // @supportURL   https://github.com/RyanStarFox/JAccountVerificationCode/issues
