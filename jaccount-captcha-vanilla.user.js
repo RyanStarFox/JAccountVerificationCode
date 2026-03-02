@@ -54,6 +54,31 @@
     let ort = null;
     let onnxSession = null;
 
+    // 抑制 ONNX 警告日志 - 只抑制 ONNX Runtime 的内部日志
+    (function() {
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        console.warn = function(...args) {
+            const msg = args[0];
+            if (msg && typeof msg === 'string') {
+                // 抑制 ONNX Runtime 的警告: [W:onnxruntime 或 Initializer 开头
+                if (msg.includes('[W:onnxruntime') || msg.startsWith('Initializer ')) {
+                    return;
+                }
+            }
+            originalWarn.apply(console, args);
+        };
+        console.error = function(...args) {
+            const msg = args[0];
+            if (msg && typeof msg === 'string') {
+                if (msg.includes('[W:onnxruntime') || msg.startsWith('Initializer ')) {
+                    return;
+                }
+            }
+            originalError.apply(console, args);
+        };
+    })();
+
 
     // 抑制 ONNX 警告日志
     // 抑制 ONNX 警告日志
@@ -75,7 +100,7 @@
         };
     })();
         const originalWarn = console.warn;
-        console.warn = function(...args) {
+    })();
             if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnx')) return;
             originalWarn.apply(console, args);
         };
