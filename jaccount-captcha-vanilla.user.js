@@ -2,9 +2,9 @@
 // @name         jAccount 验证码识别 - 原生JS版 (无需jQuery)
 // @name:en      jAccount Captcha Auto-Recognizer - Vanilla JS
 // @namespace    http://tampermonkey.net/
-// @version      2.0
-// @description  jAccount验证码识别 - 纯原生JavaScript，完全兼容Safari
-// @description:en jAccount captcha recognition - pure native JavaScript, fully compatible with Safari
+// @version      2.1
+// @description  jAccount验证码识别 - 纯本地OCR，无需远程服务器
+// @description:en jAccount captcha recognition - local OCR, no remote server required
 // @author       danyang685
 // @homepageURL  https://github.com/danyang685/JAccountVerificationCode
 // @supportURL   https://github.com/danyang685/JAccountVerificationCode/issues
@@ -13,8 +13,8 @@
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAmlJREFUWAntl8FKAzEQhv+zJWIXHbRjcXFwcHB00MnJ0cXF2c3R0cXF2dHJ0dHJ0dHRz/5LR0dHR+IKFAouWhTc7GZ3k5yT3WQPaYL+s5PdzPJm/pnRJBIYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAaDwWAwGAwGg8FgMBgMBoPBYDAYDAYDAeT7/f5XkqR+v/+TpunVbrf7NplM/k4mk/8Wi8XvhULhW7FY/F4qlb4Vi8VvhULha7FY/F4oFL4WCoXP+Xz+Uzab/ZDJZD5kMpkPyWTyQzKZ/JBIJD4kEokPiUTiXTwef4/H4+/h2HvY7e/D4fBbNBp9C4fDr6FQ6DUYCLz6fL5Xt9v9YrfbX+12+6vVan21Wq0vFovl2Ww2P5vN5kfz+fxorVYb7fP5/ov5fH5wMBgM9vv9/na73c1ms5u1Wm20xWL5L+bz+cHBwOBb8C34GnwOvgeTyeQ/1Gq10VardbRcLo/2er2Pfr//0ev1Prrd7ker1fpot9t/mUzm/2KxOB6LxUYbjcZot9sd7fV6H61W62OxWPyG3W4fTafTo+12+2M2m/0P1Gq10UajMToYDD663e5Ht9v96Ha7H91u96Pb7X50u92Pbrf70ePx/AdyuX+C2WwOsrOzs1csFgfZbHY4m80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ7DCbzQ6z2ewwm80Os9nsMJvNDrPZ5K7gYv0y+AAAAAASUVORK5CYII=
 // @grant        GM_xmlHttpRequest
 // @run-at       document-end
-// @connect      geek.sjtu.edu.cn
-// @connect      *
+// @connect      unpkg.com
+// @license      MIT
 // @license      MIT
 // ==/UserScript==
 
@@ -25,8 +25,7 @@
     const CONFIG = {
         captchaInputSelector: '#input-login-captcha',
         captchaImageSelector: '#captcha-img',
-        captchaSolverUrl: 'https://geek.sjtu.edu.cn/captcha-solver/',
-        timeout: 15000
+        timeout: 30000  // OCR 需要更长时间
     };
     
     // ============ 工具函数 ============
@@ -116,20 +115,45 @@
             }
         });
     }
-    // 发送请求 - 优先使用 GM_xmlHttpRequest 绕过 CORS
+    // 本地 OCR 识别 (使用 Tesseract.js)
+    async function recognizeWithTesseract(captchaImage) {
+        console.log('[jAccount] 开始本地 OCR 识别...');
+        
+        // 获取图片 Base64
+        const dataURL = await getImageBase64(captchaImage);
+        
+        // 动态加载 Tesseract.js
+        if (!window.Tesseract) {
+            console.log('[jAccount] 加载 Tesseract.js...');
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('Tesseract.js 加载失败'));
+                document.head.appendChild(script);
+            });
+        }
+        
+        console.log('[jAccount] 执行 OCR 识别...');
+        const result = await Tesseract.recognize(dataURL, 'eng+chi_sim', {
+            logger: m => console.log('[jAccount] OCR:', m.status, (m.progress * 100).toFixed(0) + '%')
+        });
+        
+        // 清理结果：只保留数字和字母
+        const text = result.data.text.replace(/[^a-zA-Z0-9]/g, '');
+        console.log('[jAccount] OCR 原始结果:', result.data.text, '-> 清理后:', text);
+        return text;
+    }
+
+    // 远程识别 (GM_xmlHttpRequest)
     function sendRequest(url, formData) {
         return new Promise((resolve, reject) => {
-            console.log('[jAccount] sendRequest 被调用, GM_xmlHttpRequest 可用:', typeof GM_xmlHttpRequest !== 'undefined');
-            
-            // 优先使用 GM_xmlHttpRequest (Tampermonkey 内置，可跨域)
             if (typeof GM_xmlHttpRequest !== 'undefined') {
-                console.log('[jAccount] 使用 GM_xmlHttpRequest 发送请求');
                 GM_xmlHttpRequest({
                     url: url,
                     method: 'POST',
                     data: formData,
                     onload: function(response) {
-                        console.log('[jAccount] GM_xmlHttpRequest 响应状态:', response.status);
                         if (response.status >= 200 && response.status < 300) {
                             resolve(response.responseText);
                         } else {
@@ -137,29 +161,15 @@
                         }
                     },
                     onerror: function(error) {
-                        console.error('[jAccount] GM_xmlHttpRequest 错误:', error);
                         reject(error);
                     },
                     ontimeout: function() {
                         reject(new Error('Request timeout'));
                     }
                 });
-                return;
+            } else {
+                reject(new Error('GM_xmlHttpRequest not available'));
             }
-            
-            console.log('[jAccount] GM_xmlHttpRequest 不可用，使用 fetch (可能会有 CORS 问题)');
-            // 备用方案: fetch (可能会有 CORS 问题)
-            fetch(url, {
-                method: 'POST',
-                body: formData,
-                mode: 'cors'
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                return response.text();
-            })
-            .then(resolve)
-            .catch(reject);
         });
     }
     
@@ -174,24 +184,16 @@
         }
         
         try {
-            // 获取图片
-            const dataURL = await getImageBase64(captchaImage);
+            captchaInput.placeholder = '正在OCR识别...';
             
-            // 转换为 Blob
-            const blob = await fetch(dataURL).then(r => r.blob());
-            const formData = new FormData();
-            formData.append('image', new File([blob], 'captcha.jpg', { type: 'image/jpeg' }));
-            
-            // 发送请求
-            captchaInput.placeholder = '正在识别...';
-            const responseText = await sendRequest(CONFIG.captchaSolverUrl, formData);
-            const result = JSON.parse(responseText);
+            // 使用本地 Tesseract.js 进行 OCR 识别
+            const result = await recognizeWithTesseract(captchaImage);
             
             // 填充结果
-            captchaInput.value = result.result;
+            captchaInput.value = result;
             captchaInput.spellcheck = false;
             
-            console.log('[jAccount] 识别成功:', result.result);
+            console.log('[jAccount] 识别成功:', result);
             
         } catch (e) {
             console.error('[jAccount] 识别失败:', e);
