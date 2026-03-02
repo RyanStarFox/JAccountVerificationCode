@@ -116,37 +116,37 @@
             }
         });
     }
-    
-    // 发送请求 - 兼容方案
+    // 发送请求 - 优先使用 GM.xmlHttpRequest 绕过 CORS
     function sendRequest(url, formData) {
         return new Promise((resolve, reject) => {
-            // 方法1: GM.xmlHttpRequest
-            const gmFunc = (typeof GM !== 'undefined' && GM.xmlHttpRequest) || 
-                          (typeof GM_xmlHttpRequest !== 'undefined' && GM_xmlHttpRequest);
-            
-            if (gmFunc) {
-                gmFunc({
-                    url: url,
-                    method: 'POST',
-                    data: formData,
-                    onload: function(response) {
-                        if (response.status >= 200 && response.status < 300) {
-                            resolve(response.responseText);
-                        } else {
-                            reject(new Error('HTTP ' + response.status));
+            // 尝试使用 GM.xmlHttpRequest (Tampermonkey 内置，可跨域)
+            try {
+                if (typeof GM_xmlHttpRequest !== 'undefined') {
+                    GM_xmlHttpRequest({
+                        url: url,
+                        method: 'POST',
+                        data: formData,
+                        onload: function(response) {
+                            if (response.status >= 200 && response.status < 300) {
+                                resolve(response.responseText);
+                            } else {
+                                reject(new Error('HTTP ' + response.status));
+                            }
+                        },
+                        onerror: function(error) {
+                            reject(error);
+                        },
+                        ontimeout: function() {
+                            reject(new Error('Request timeout'));
                         }
-                    },
-                    onerror: function(error) {
-                        reject(error);
-                    },
-                    ontimeout: function() {
-                        reject(new Error('Request timeout'));
-                    }
-                });
-                return;
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.log('[jAccount] GM_xmlHttpRequest 不可用，尝试其他方法');
             }
             
-            // 方法2: fetch (CORS)
+            // 备用方案: 尝试 fetch (可能会有 CORS 问题)
             fetch(url, {
                 method: 'POST',
                 body: formData,
