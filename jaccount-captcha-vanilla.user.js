@@ -95,14 +95,18 @@
     }
 
     function postprocessONNX(output) {
+        // 输出键可能是 'output' 或其他名称
+        const outputKey = Object.keys(output)[0];
+        console.log('[jAccount] 使用输出键:', outputKey);
+        const logits = output[outputKey].data;
         const chars = 'abcdefghijklmnopqrstuvwxyz';
-        const logits = output.output.data;
         let result = '';
         for (let i = 0; i < 5; i++) {
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
-                if (logits[i * 26 + j] > maxVal) {
-                    maxVal = logits[i * 26 + j];
+                const idx = i * 26 + j;
+                if (logits[idx] > maxVal) {
+                    maxVal = logits[idx];
                     maxIdx = j;
                 }
             }
@@ -114,17 +118,18 @@
     async function recognizeWithONNX(captchaImage) {
         await loadONNX();
         await loadONNXModel();
+        
+        // 预处理图片
+        const inputData = preprocessForONNX(captchaImage);
         console.log('[jAccount] 输入数据长度:', inputData.length);
         const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
+        
         // 模型输入名是 'input.1'
         console.log('[jAccount] 执行 ONNX 推理...');
         const feeds = { 'input.1': inputTensor };
         const output = await onnxSession.run(feeds);
         console.log('[jAccount] ONNX 输出 keys:', Object.keys(output));
-        return postprocessONNX(output);
-        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
-        // 模型输入名是 'input.1'
-        const output = await onnxSession.run({ 'input.1': inputTensor });
+        
         return postprocessONNX(output);
     }
     
