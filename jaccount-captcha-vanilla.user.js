@@ -78,16 +78,18 @@
     }
 
     function preprocessForONNX(imgElement) {
+        const width = 110;
+        const height = 40;
         const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(imgElement, 0, 0, 64, 64);
-        const imageData = ctx.getImageData(0, 0, 64, 64);
+        ctx.drawImage(imgElement, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
-        const input = new Float32Array(64 * 64);
+        const input = new Float32Array(width * height);
         const threshold = 156;
-        for (let i = 0; i < 64 * 64; i++) {
+        for (let i = 0; i < width * height; i++) {
             const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
             input[i] = gray > threshold ? 1.0 : 0.0;
         }
@@ -122,7 +124,7 @@
         // 预处理图片
         const inputData = preprocessForONNX(captchaImage);
         console.log('[jAccount] 输入数据长度:', inputData.length);
-        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 64, 64]);
+        const inputTensor = new ort.Tensor('float32', inputData, [1, 1, 40, 110]);
         
         // 模型输入名是 'input.1'
         console.log('[jAccount] 执行 ONNX 推理...');
