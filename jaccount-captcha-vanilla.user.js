@@ -97,23 +97,29 @@
     }
 
     function postprocessONNX(output) {
-        // 输出键可能是 'output' 或其他名称
-        const outputKey = Object.keys(output)[0];
-        console.log('[jAccount] 使用输出键:', outputKey);
-        const logits = output[outputKey].data;
+        // 输出是 5 个独立的 tensor，键为 '218', '219', '220', '221', '222'
+        const outputKeys = Object.keys(output);
+        console.log('[jAccount] 输出键:', outputKeys);
+        
         const chars = 'abcdefghijklmnopqrstuvwxyz';
         let result = '';
-        for (let i = 0; i < 5; i++) {
+        
+        for (const key of outputKeys) {
+            const tensor = output[key];
+            const data = tensor.data;
+            
+            // 找到最大值的索引
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
-                const idx = i * 26 + j;
-                if (logits[idx] > maxVal) {
-                    maxVal = logits[idx];
+                if (data[j] > maxVal) {
+                    maxVal = data[j];
                     maxIdx = j;
                 }
             }
             result += chars[maxIdx];
         }
+        
+        console.log('[jAccount] 后处理结果:', result);
         return result;
     }
 
