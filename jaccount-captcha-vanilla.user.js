@@ -87,11 +87,14 @@
             captchaInput.spellcheck = false;
             console.log('[jAccount] 识别成功:', text);
             
-            // 自动聚焦到用户名输入框
-            const usernameInput = getElement(CONFIG.usernameSelector);
-            if (usernameInput) {
-                usernameInput.focus();
-            }
+            // 延迟聚焦到用户名输入框
+            setTimeout(() => {
+                const usernameInput = getElement(CONFIG.usernameSelector);
+                if (usernameInput) {
+                    usernameInput.focus();
+                    console.log('[jAccount] 已聚焦到用户名框');
+                }
+            }, 100);
             
         } catch (e) {
             console.error('[jAccount] 识别失败:', e);
