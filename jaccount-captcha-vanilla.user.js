@@ -142,33 +142,51 @@
         console.log('[jAccount] 原始结果:', result);
         
         // ==========================================
-        // 收集三种判断方法的数据，输出到控制台供分析
+        // 4位/5位验证码长度判断
         // ==========================================
         
-        // 1. 绝对值法
         const lastOne = confidenceValues[4];
-        console.log(`[jAccount] [指标1 - 绝对值] 第5位置信度: ${lastOne.toFixed(0)}`);
-        
-        // 2. 比例法 (之前的方法)
         const firstFourAvg = confidenceValues.slice(0, 4).reduce((a,b)=>a+b,0) / 4;
         const ratio = lastOne / firstFourAvg;
-        console.log(`[jAccount] [指标2 - 比例] 前4均值: ${firstFourAvg.toFixed(0)}, 第5位: ${lastOne.toFixed(0)}, 比例: ${ratio.toFixed(3)}`);
         
-        // 3. 断层法
-        const dropRatio = confidenceValues[4] / confidenceValues[3];
-        console.log(`[jAccount] [指标3 - 断层] 第4位: ${confidenceValues[3].toFixed(0)}, 第5位: ${lastOne.toFixed(0)}, 断层比例(第5位/第4位): ${dropRatio.toFixed(3)}`);
+        console.log(`[jAccount] 置信度分析 - 前4位平均: ${firstFourAvg.toFixed(1)}, 第5位: ${lastOne.toFixed(1)}, 比例: ${ratio.toFixed(3)}`);
         
-        // 4. Margin法 (冠亚军差距)
-        const margin = confidenceValues[4] / (secondBestValues[4] === 0 ? 0.01 : secondBestValues[4]);
-        console.log(`[jAccount] [指标4 - Margin] 第5位第一名: ${confidenceValues[4].toFixed(0)}, 第二名: ${secondBestValues[4].toFixed(0)}, 倍数: ${margin.toFixed(2)}`);
-        
-        // 综合判断 (当前仍然使用比例法，供对比)
-        if (ratio < 0.5 || lastOne < 10000) { 
+        // 核心判断逻辑：
+        // 1. 第5位置信度绝对值 < 10 (实际数据中5位都在16+, 4位的填充位在6以下)
+        // 2. 或 第5位/前4位平均比例 < 0.6 (实际数据中4位都在0.35以下，5位都在0.9以上)
+        if (lastOne < 10 || ratio < 0.6) { 
             result = result.substring(0, 4); 
-            console.log('[jAccount] >>> 最终判定为 4 位:', result); 
+            console.log('[jAccount] >>> 最终判定为 4 位验证码'); 
         } else { 
-            console.log('[jAccount] >>> 最终判定为 5 位:', result); 
+            console.log('[jAccount] >>> 最终判定为 5 位验证码'); 
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         
         console.log('[jAccount] ========== 后处理完成 ==========');
         return result;
