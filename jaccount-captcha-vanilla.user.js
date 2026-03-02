@@ -59,7 +59,7 @@
     (function() {
         const originalWarn = console.warn;
         console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('ort')) return;
+            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnx')) return;
             originalWarn.apply(console, args);
         };
     })();
@@ -100,7 +100,8 @@
         const threshold = 156;
         for (let i = 0; i < width * height; i++) {
             const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
-            input[i] = gray > threshold ? 255.0 : 0.0;
+            // Python: img.point(table, "1") 后再做 /255.0 归一化
+            input[i] = gray > threshold ? 1.0 : 0.0;
         }
         return input;
     }
