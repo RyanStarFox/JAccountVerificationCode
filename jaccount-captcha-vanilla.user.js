@@ -82,29 +82,29 @@
 
 
 
-    (function() {
-        const originalWarn = console.warn;
-        const originalError = console.error;
-        const originalLog = console.log;
-        console.warn = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnxruntime')) return;
-            originalWarn.apply(console, args);
-        };
-        console.error = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnxruntime')) return;
-            originalError.apply(console, args);
-        };
-        console.log = function(...args) {
-            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnxruntime')) return;
-            originalLog.apply(console, args);
-        };
-    })();
-        const originalWarn = console.warn;
-    })();
-            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('onnx')) return;
-            originalWarn.apply(console, args);
-        };
-    })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     async function loadONNX() {
         if (ort) return ort;
         console.log('[jAccount] 加载 ONNX Runtime...');
