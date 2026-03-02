@@ -54,6 +54,15 @@
     let ort = null;
     let onnxSession = null;
 
+
+    // 抑制 ONNX 警告日志
+    (function() {
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].toLowerCase().includes('ort')) return;
+            originalWarn.apply(console, args);
+        };
+    })();
     async function loadONNX() {
         if (ort) return ort;
         console.log('[jAccount] 加载 ONNX Runtime...');
@@ -91,7 +100,7 @@
         const threshold = 156;
         for (let i = 0; i < width * height; i++) {
             const gray = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
-            input[i] = gray > threshold ? 1.0 : 0.0;
+            input[i] = gray > threshold ? 255.0 : 0.0;
         }
         return input;
     }
@@ -103,12 +112,13 @@
         
         const chars = 'abcdefghijklmnopqrstuvwxyz';
         let result = '';
+        let confidenceValues = [];
         
         for (const key of outputKeys) {
             const tensor = output[key];
             const data = tensor.data;
             
-            // 找到最大值的索引
+            // 找到最大值的索引和置信度
             let maxIdx = 0, maxVal = -Infinity;
             for (let j = 0; j < 26; j++) {
                 if (data[j] > maxVal) {
@@ -116,7 +126,47 @@
                     maxIdx = j;
                 }
             }
+            confidenceValues.push(maxVal);
             result += chars[maxIdx];
+        }
+        
+        console.log('[jAccount] 置信度:', confidenceValues);
+        
+        // 检测有效字符数量 - 从后往前扫描，找到低置信度的起始位置
+        // 支持 1-5 位验证码（模型输出 5 个 tensor）
+        const avgConfidence = confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length;
+        const threshold = avgConfidence * 0.3;
+        
+        // 从后往前数有多少个低置信度的位置
+        let trailingLowCount = 0;
+        for (let i = confidenceValues.length - 1; i >= 0; i--) {
+            if (confidenceValues[i] < threshold) {
+                trailingLowCount++;
+            } else {
+                break;  // 遇到高置信度就停止
+            }
+        }
+        
+        // 实际长度 = 总长度 - 尾随低置信度数量
+        // 至少保留 1 位
+        const actualLength = Math.max(1, confidenceValues.length - trailingLowCount);
+        
+        if (trailingLowCount > 0) {
+            result = result.substring(0, actualLength);
+            console.log(`[jAccount] 检测为${actualLength}位验证码 (${trailingLowCount}位低置信度):`, result);
+        }
+        
+        console.log('[jAccount] 后处理结果:', result);
+        return result;
+    }
+
+    async function recognizeWithONNX(captchaImage) {
+        const avgConfidence = confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length;
+        const lastConfidence = confidenceValues[confidenceValues.length - 1];
+        
+        if (lastConfidence < avgConfidence * 0.3 && confidenceValues.length === 5) {
+            result = result.substring(0, 4);
+            console.log('[jAccount] 检测为4位验证码:', result);
         }
         
         console.log('[jAccount] 后处理结果:', result);
