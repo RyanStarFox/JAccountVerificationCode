@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         jAccount 验证码识别 - 本地深度学习版
-// @name:en      jAccount Captcha Auto-Recognizer (Local Deep Learning)
+// @name         jAccount 验证码识别 - Tesseract 版
+// @name:en      jAccount Captcha Auto-Recognizer (Tesseract)
 // @namespace    https://github.com/RyanStarFox
-// @version      3.0.1
-// @description  基于本地 ONNX 模型的 jAccount 验证码自动识别，速度快，无服务器请求，支持 4/5 位验证码
-// @description:en Auto-recognize jAccount captcha using local ONNX model, fast and secure, supports 4/5 digits
+// @version      3.1.0
+// @description  基于 Tesseract.js 的 jAccount 验证码自动识别，支持 4/5 位验证码
+// @description:en Auto-recognize jAccount captcha using Tesseract.js, supports 4/5 digits
 // @author       danyang685
 // @homepageURL  https://github.com/RyanStarFox/JAccountVerificationCode
 // @supportURL   https://github.com/RyanStarFox/JAccountVerificationCode/issues
@@ -243,17 +243,9 @@
             
             let text;
             
-            // 优先使用 ONNX 模型识别
-            try {
-                console.log('[jAccount] 尝试 ONNX 模型识别...');
-                text = await recognizeWithONNX(captchaImage);
-                console.log('[jAccount] ONNX 识别成功:', text);
-            } catch (onnxError) {
-                console.warn('[jAccount] ONNX 识别失败，使用 Tesseract:', onnxError.message);
-                // 回退到 Tesseract
-                text = await recognizeWithTesseract(captchaImage);
-                console.log('[jAccount] Tesseract 识别成功:', text);
-            }
+            // 使用 Tesseract 识别
+            text = await recognizeWithTesseract(captchaImage);
+            console.log('[jAccount] Tesseract 识别成功:', text);
             
             captchaInput.value = text;
             captchaInput.spellcheck = false;
